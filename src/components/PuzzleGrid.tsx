@@ -10,7 +10,8 @@ interface PuzzleGridProps {
 }
 
 const MIN_CELL = 8;
-const MAX_CELL = 44;
+const MAX_CELL = 72;
+const BOTTOM_MARGIN = 16;
 
 export default function PuzzleGrid({ game, sidenums }: PuzzleGridProps) {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -28,7 +29,8 @@ export default function PuzzleGrid({ game, sidenums }: PuzzleGridProps) {
 
             // Space actually available for the puzzle, before subtracting the number gutters.
             const availableW = container.clientWidth;
-            const availableH = Math.max(window.innerHeight * 0.72, 240);
+            const top = container.getBoundingClientRect().top;
+            const availableH = Math.max(window.innerHeight - top - BOTTOM_MARGIN, 240);
 
             // The number gutters size themselves off their own text content (not off `cell`),
             // so this measurement is stable and doesn't feed back into itself.

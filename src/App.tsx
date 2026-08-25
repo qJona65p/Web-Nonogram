@@ -40,7 +40,7 @@ export default function App() {
     }
     
     return (
-        <main className="mx-auto flex w-full h-full flex-1 flex-col gap-6 px-4 py-6 sm:flex-row sm:items-start sm:gap-8 sm:px-6 sm:py-10">
+        <main className="mx-auto flex w-full flex-1 flex-col sm:flex-row sm:items-stretch">
             <GameConfigs
                 sizex={sizex} setSizex={setSizex} 
                 sizey={sizey} setSizey={setSizey}
@@ -50,7 +50,7 @@ export default function App() {
                     setGameDB(generateGame(sizex, sizey, difficulty / 10))
                         .then(() => { setGameChanged((c) => !c) })
                 }} />
-            <section className="flex flex-grow items-center justify-center overflow-auto py-2">
+            <section className="flex flex-1 items-center justify-center overflow-auto py-2">
                 <PuzzleGrid game={game} sidenums={sidenums} />
             </section>
         </main>
