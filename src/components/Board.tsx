@@ -1,14 +1,16 @@
-import type { Game } from "../lib/types";
+import { useGame } from "../ctx/gameCtx";
 import BoardCell from "./BoardCell";
 
 interface BoardProps {
-    game: Game;
+    playerGame: (boolean | null)[][];
     cell: number;
 }
 
-export default function Board({ game, cell }: BoardProps) {
-    const filas = new Array(game.sizex).fill(null).map((_, i) => i);
-    const columnas = new Array(game.sizey).fill(null).map((_, i) => i);
+export default function Board({ playerGame, cell }: BoardProps) {
+    const { sizex, sizey } = useGame();
+
+    const filas = new Array(sizex).fill(null).map((_, i) => i);
+    const columnas = new Array(sizey).fill(null).map((_, i) => i);
 
     return (
         <table
@@ -19,7 +21,7 @@ export default function Board({ game, cell }: BoardProps) {
             {filas.map((fila) => (
                 <tr key={fila}>
                     {columnas.map((col) => 
-                        <BoardCell key={col} cell={cell} col={col} fila={fila} initialValue={game.values[fila][col]} />
+                        <BoardCell key={col} cell={cell} col={col} fila={fila} initialValue={playerGame[fila][col]} />
                     )}
                 </tr>
             ))}

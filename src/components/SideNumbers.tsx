@@ -1,10 +1,15 @@
+import { useGame } from "../ctx/gameCtx";
+
 interface SideProps {
-    sizex: number;
-    Items: number[][];
     cell: number;
 }
 
-export default function SideNumbers({ sizex, Items, cell }: SideProps) {
+export default function SideNumbers({ cell }: SideProps) {
+    const { sizex, sidenums } = useGame()
+    if (sidenums == null) return;
+
+    const Items = sidenums.Right;
+
     const maxItems = Math.max(...Items.map(fila => fila.length), 0);
 
     const filas = new Array(sizex).fill(null).map((_, i) => i);

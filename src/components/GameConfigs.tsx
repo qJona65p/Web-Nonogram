@@ -1,18 +1,15 @@
 import { useState } from "react";
-
-interface GameConfigsProps {
-    sizex: number;
-    setSizex: (e: number) => void;
-    sizey: number;
-    setSizey: (e: number) => void;
-    difficulty: number;
-    setDifficulty: (e: number) => void;
-    onGenerateGame: () => void;
-}
+import { useGame } from "../ctx/gameCtx";
 
 const PANEL_WIDTH = "18rem";
 
-export default function GameConfigs({ sizex, setSizex, sizey, setSizey, difficulty, setDifficulty, onGenerateGame }: GameConfigsProps) {
+export default function GameConfigs() {
+    const { onGenerateGame } = useGame();
+
+    const [sizex, setSizex] = useState(10);
+    const [sizey, setSizey] = useState(10);
+    const [difficulty, setDifficulty] = useState(5);
+
     const [open, setOpen] = useState(true);
 
     return(
@@ -32,7 +29,7 @@ export default function GameConfigs({ sizex, setSizex, sizey, setSizey, difficul
                     </div>
 
                     <button
-                        onClick={() => onGenerateGame()}
+                        onClick={() => onGenerateGame(sizex, sizey, difficulty / 10)}
                         className="mt-6 w-full cursor-pointer rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white transition-[filter,transform] hover:brightness-110 active:scale-[0.98]"
                     >Generate game</button>
                 </div>

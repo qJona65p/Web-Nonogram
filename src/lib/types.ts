@@ -13,4 +13,5 @@ export interface Cell {
 export interface SideNums {
     Right: number[][];
     Up: number[][];
+    GameNums: number[][][];
 }
