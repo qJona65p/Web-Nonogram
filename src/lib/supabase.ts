@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
-import { useAuth } from '../ctx/userCtx';
 import type { Cell, Game } from './types';
+import { getBlankGame } from './funcs';
 
 const supabaseUrl = import.meta.env.VITE_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_PUBLIC_SUPABASE_ANON_KEY;
@@ -12,7 +12,7 @@ export async function setGameDB(game: Game) {
 
     for (let x = 0; x < game.sizex; x++) {
         for (let y = 0; y < game.sizey; y++) {
-            translated.push({ x, y, value: game.values[x][y]})
+            translated.push({ x, y, value: game.values[x][y]!})
         }
     }
 
@@ -27,9 +27,7 @@ export async function getGame(): Promise<Game> {
     const sizex = res[res.length - 1].x + 1;
     const sizey = res[res.length - 1].y + 1;
 
-    let game: boolean[][] = Array.from({ length: sizex }, () =>
-        Array(sizey).fill(false)
-    );
+    let game = getBlankGame(sizex, sizey);
 
     for (let c = 0; c < res.length; c++) {
         game[res[c].x][res[c].y] = res[c].value;
@@ -38,9 +36,14 @@ export async function getGame(): Promise<Game> {
     return { sizex, sizey, values: game}
 }
 
-export async function setMovement(x: number, y: number, value: boolean) {
-    const { username } = useAuth();
-    await supabase.from('movements').insert({ username,  x, y, value});
+export async function getCellDB(x: number, y: number): Promise<boolean> {
+    return await supabase.from('game').select('value')
+        .match({x, y}).single()
+        .then((res) => res.data?.value);
+}
+
+export async function setMovement(username: string, x: number, y: number, value: boolean) {
+    await supabase.from('movements').insert({ username, x, y, value });
 }
 
 export async function submitUsername(username: string): Promise<boolean> {

@@ -1,7 +1,7 @@
 export interface Game {
     sizex: number;
     sizey: number;
-    values: boolean[][];
+    values: (boolean | null)[][];
 }
 
 export interface Cell {

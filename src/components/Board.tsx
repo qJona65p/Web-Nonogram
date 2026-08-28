@@ -1,5 +1,5 @@
 import type { Game } from "../lib/types";
-import { changeColor } from "../lib/funcs";
+import BoardCell from "./BoardCell";
 
 interface BoardProps {
     game: Game;
@@ -18,25 +18,9 @@ export default function Board({ game, cell }: BoardProps) {
             <tbody>
             {filas.map((fila) => (
                 <tr key={fila}>
-                    {columnas.map((col) => {
-                        const filled = game.values[fila][col];
-                        return (
-                            <td
-                                key={col}
-                                onClick={changeColor}
-                                className={`nonogram-cell cursor-pointer border border-border/60 p-0 transition-colors duration-100 ${filled ? "bg-bg hover:bg-accent-bg" : "bg-text-h"
-                                    }`}
-                                style={{
-                                    width: cell,
-                                    height: cell,
-                                    borderLeftWidth: col % 5 === 0 ? "2px" : undefined,
-                                    borderLeftColor: col % 5 === 0 ? "var(--border)" : undefined,
-                                    borderTopWidth: fila % 5 === 0 ? "2px" : undefined,
-                                    borderTopColor: fila % 5 === 0 ? "var(--border)" : undefined,
-                                }}
-                            />
-                        );
-    })}
+                    {columnas.map((col) => 
+                        <BoardCell cell={cell} col={col} fila={fila} />
+                    )}
                 </tr>
             ))}
             </tbody>

@@ -1,4 +1,5 @@
 import type { Game, SideNums } from "./types";
+import { getCellDB, setMovement } from "./supabase";
 
 export function generateGame(sizex: number, sizey: number, difficulty: number): Game {
     if (difficulty > 0.8) difficulty = 0.8;
@@ -16,6 +17,10 @@ export function generateGame(sizex: number, sizey: number, difficulty: number): 
     }
 
     return { sizex, sizey, values: game };
+}
+
+export function getBlankGame(sizex: number, sizey: number, nulls: boolean = false) {
+    return Array.from({ length: sizex }, () => Array(sizey).fill(nulls ? null : false));
 }
 
 export function numberCount(game: Game): SideNums{
@@ -66,7 +71,11 @@ export function numberCount(game: Game): SideNums{
     return { Right: arraySideNum, Up: arrayUpNum }
 }
 
-export function changeColor(){
-    
-    return "false" 
+export function handleClick(username: string, fila: number, col: number, value: boolean, onChange: (value: boolean) => void, ) {
+    setMovement(username, fila, col, value);
+
+    getCellDB(fila, col).then((res) => { 
+        onChange(res);
+        console.log(res === value ? "ye" : "nu");
+    });
 }

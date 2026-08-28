@@ -1,6 +1,6 @@
 import Login from "./components/Login";
 import { useAuth } from "./ctx/userCtx";
-import { generateGame, numberCount } from "./lib/funcs";
+import { generateGame, numberCount, getBlankGame } from "./lib/funcs";
 import { useEffect, useState } from "react";
 import { getGame, setGameDB } from "./lib/supabase";
 import { type SideNums, type Game } from "./lib/types";
@@ -15,6 +15,7 @@ export default function App() {
     const [difficulty, setDifficulty] = useState(5);
 
     const [game, setGame] = useState<Game | null >(null);
+    const [playerGame, setPlayerGame] = useState<(boolean | null)[][] | null>();
     const [sidenums, setSidenums] = useState<SideNums | null>(null);
     const [gameChanged, setGameChanged] = useState(false);
     
@@ -26,12 +27,16 @@ export default function App() {
     }, [gameChanged])
 
     useEffect(() => {
-        if (game != null) setSidenums(numberCount(game));
+        if (game != null) {
+            setSidenums(numberCount(game));
+            // fill playerGame and load moves from player
+            setPlayerGame(getBlankGame(game.sizex, game.sizey, true));
+        }
     }, [game])
     
     if (username == null) return <Login />;
     
-    if (game == null || sidenums == null) {
+    if (game == null || sidenums == null || playerGame == null) {
         return (
             <main className="flex flex-1 items-center justify-center">
                 <div className="h-8 w-8 animate-spin rounded-full border-2 border-border border-t-accent" />
@@ -51,7 +56,7 @@ export default function App() {
                         .then(() => { setGameChanged((c) => !c) })
                 }} />
             <section className="flex flex-1 items-center justify-center overflow-auto py-2">
-                <PuzzleGrid game={game} sidenums={sidenums} />
+                <PuzzleGrid game={{ sizex:game.sizex, sizey:game.sizey, values:playerGame}} sidenums={sidenums} />
             </section>
         </main>
     )
