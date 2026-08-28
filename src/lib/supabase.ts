@@ -33,7 +33,17 @@ export async function getGame(): Promise<Game> {
         game[res[c].x][res[c].y] = res[c].value;
     }
 
-    return { sizex, sizey, values: game}
+    return { sizex, sizey, values: game }
+}
+
+export async function getPlayerGame(username: string, sizex: number, sizey: number): Promise<(boolean | null)[][]> {
+    let game = getBlankGame(sizex, sizey, true);
+
+    let res = (await supabase.from('movements').select('x, y, value').eq('username', username)).data;
+
+    for (const move of res!) game[move.x][move.y] = move.value;
+
+    return game;
 }
 
 export async function getCellDB(x: number, y: number): Promise<boolean> {

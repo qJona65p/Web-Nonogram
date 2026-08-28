@@ -5,12 +5,13 @@ import { handleClick } from "../lib/funcs";
 export interface BoardCellProps {
     cell: number,
     col: number,
-    fila: number
+    fila: number,
+    initialValue: boolean | null
 }
 
-export default function BoardCell({ cell, col, fila }: BoardCellProps) {
-    const { username } = useAuth();
-    const [ value, setValue ] = useState<boolean | null>(null); 
+export default function BoardCell({ cell, col, fila, initialValue }: BoardCellProps) {
+    const { username, lives, loseLive } = useAuth();
+    const [value, setValue] = useState<boolean | null>(initialValue); 
 
     if (username == null) return;
 
@@ -18,14 +19,22 @@ export default function BoardCell({ cell, col, fila }: BoardCellProps) {
         <td
             key={col}
             onClick={() => {
-                if (value == null) handleClick(username, fila, col, true, (val) => { setValue(val) }, )
+                console.log("vidas: ", lives);
+                if (lives > 0) {
+                    if (value == null) handleClick(username, fila, col, true, (val) => { setValue(val) }, () => { loseLive() } )
+                }
+                else console.log("morto");
             }}
             onContextMenu={(e) => {
                 e.preventDefault();
-                if (value == null) handleClick(username, fila, col, false, (val) => { setValue(val) })
+                console.log("vidas: ", lives);
+                if (lives > 0) {
+                    if (value == null) handleClick(username, fila, col, false, (val) => { setValue(val) }, () => { loseLive() } )
+                }
+                    else console.log("morto");
             }}
             className={`nonogram-cell cursor-pointer border border-border/60 p-0 transition-colors duration-100 
-                                    ${value != null ? (value ? "bg-bg hover:bg-accent-bg" : "bg-text-h") : "bg-slate-500 hover:bg-slate-600"}`}
+                ${value != null ? (value ? "bg-bg hover:bg-accent-bg" : "bg-text-h") : "bg-slate-500 hover:bg-slate-600"}`}
             style={{
                 width: cell,
                 height: cell,

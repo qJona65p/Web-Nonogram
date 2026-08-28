@@ -71,11 +71,14 @@ export function numberCount(game: Game): SideNums{
     return { Right: arraySideNum, Up: arrayUpNum }
 }
 
-export function handleClick(username: string, fila: number, col: number, value: boolean, onChange: (value: boolean) => void, ) {
-    setMovement(username, fila, col, value);
-
+export function handleClick(username: string, fila: number, col: number, value: boolean, onChange: (value: boolean) => void, onFail: () => void) {
     getCellDB(fila, col).then((res) => { 
         onChange(res);
+
+        setMovement(username, fila, col, res);
+
+        if (res !== value) onFail()
+        
         console.log(res === value ? "ye" : "nu");
     });
 }

@@ -19,7 +19,7 @@ export default function Board({ game, cell }: BoardProps) {
             {filas.map((fila) => (
                 <tr key={fila}>
                     {columnas.map((col) => 
-                        <BoardCell cell={cell} col={col} fila={fila} />
+                        <BoardCell key={col} cell={cell} col={col} fila={fila} initialValue={game.values[fila][col]} />
                     )}
                 </tr>
             ))}

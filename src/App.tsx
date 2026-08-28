@@ -1,8 +1,8 @@
 import Login from "./components/Login";
 import { useAuth } from "./ctx/userCtx";
-import { generateGame, numberCount, getBlankGame } from "./lib/funcs";
+import { generateGame, numberCount } from "./lib/funcs";
 import { useEffect, useState } from "react";
-import { getGame, setGameDB } from "./lib/supabase";
+import { getGame, getPlayerGame, setGameDB } from "./lib/supabase";
 import { type SideNums, type Game } from "./lib/types";
 import GameConfigs from "./components/GameConfigs";
 import PuzzleGrid from "./components/PuzzleGrid";
@@ -27,10 +27,14 @@ export default function App() {
     }, [gameChanged])
 
     useEffect(() => {
-        if (game != null) {
+        if (game != null && username != null) {
             setSidenums(numberCount(game));
-            // fill playerGame and load moves from player
-            setPlayerGame(getBlankGame(game.sizex, game.sizey, true));
+
+            // load moves from player
+            getPlayerGame(username, game.sizex, game.sizey)
+                .then((res) => {
+                    setPlayerGame(res);
+                });
         }
     }, [game])
     
@@ -52,6 +56,7 @@ export default function App() {
                 difficulty={difficulty} setDifficulty={setDifficulty}
                 onGenerateGame={() => {
                     setGame(null);
+                    setPlayerGame(null);
                     setGameDB(generateGame(sizex, sizey, difficulty / 10))
                         .then(() => { setGameChanged((c) => !c) })
                 }} />

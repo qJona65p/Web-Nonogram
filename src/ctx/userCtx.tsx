@@ -6,12 +6,15 @@ interface UserCtxProps {
     username: string | null;
     login: (inputusername: string) => void;
     logout: () => void;
+    lives: number;
+    loseLive: () => void
 }
 
 const AuthContext = createContext<UserCtxProps | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [username, setUsername] = useState<string | null>(null);
+    const [lives, setLives] = useState(5);
 
     // Load username from localStorage on initial mount
     useEffect(() => {
@@ -29,8 +32,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUsername(null);
     };
 
+    const loseLive = () => setLives(lives - 1);
+
     return (
-        <AuthContext.Provider value={{ username, login, logout }}>
+        <AuthContext.Provider value={{ username, login, logout, lives, loseLive }}>
             {children}
         </AuthContext.Provider>
     );
