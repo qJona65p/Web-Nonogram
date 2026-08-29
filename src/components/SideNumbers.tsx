@@ -5,7 +5,7 @@ interface SideProps {
 }
 
 export default function SideNumbers({ cell }: SideProps) {
-    const { sizex, sidenums } = useGame()
+    const { sizex, sidenums, sidenumCompleted } = useGame()
     if (sidenums == null) return;
 
     const Items = sidenums.Right;
@@ -28,11 +28,12 @@ export default function SideNumbers({ cell }: SideProps) {
                 return (
                     <tr key={fila} style={{ height: cell }}>
                         {columnas.map((col) => (
-                        <td key={col} className="px-1.5 text-right align-middle">
-                            <div className="text-[clamp(9px,1.4vmin,14px)] font-medium leading-none tabular-nums text-text">
+                            <td key={col} className="px-1.5 text-right align-middle">
+                                <div className={`text-[clamp(9px,1.4vmin,16px)] leading-none tabular-nums text-text ${sidenumCompleted}
+                                    ${sidenums.Right[fila][col - spaces] != undefined && sidenums.Right[fila][col - spaces][1] <= 0 ? "font-bold" : "font-medium"}`}>
                                 {emptyRow && col === maxItems - 1
                                     ? "0" : col >= spaces
-                                    ? Items[fila][col - spaces] : " "}
+                                    ? Items[fila][col - spaces][0] : " "}
                             </div>
                         </td>
                         ))}

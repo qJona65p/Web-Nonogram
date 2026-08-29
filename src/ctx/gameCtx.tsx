@@ -13,6 +13,8 @@ interface GameCtxProps {
     onGenerateGame: (sizex: number, sizey: number, difficulty: number) => void;
     gameChanged: boolean;
     sidenums: SideNums | null;
+    sideNumsCheck: (fila: number, col: number) => void;
+    sidenumCompleted: boolean;
 }
 
 const GameContext = createContext<GameCtxProps | undefined>(undefined);
@@ -21,10 +23,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const { username, resetLives } = useAuth();
 
     const [game, setGame] = useState<Game | null >(null);
-    const [sidenums, setSidenums] = useState<SideNums | null>(null);
     const [gameChanged, setGameChanged] = useState(false);
 
-    // Load username from localStorage on initial mount
+    const [sidenums, setSidenums] = useState<SideNums | null>(null);
+    const [sidenumCompleted, setSidenumCompleted] = useState(false);
+
+    // Load game on initial mount
     useEffect(() => {
         getGame()
             .then((res) => {
@@ -47,8 +51,26 @@ export function GameProvider({ children }: { children: ReactNode }) {
             })
     }
 
+    const sideNumsCheck = (fila: number, col: number) => {
+        if (sidenums == null) return;
+
+        let down = sidenums.GameNums[fila][col][0];
+        let up = sidenums.GameNums[fila][col][1];
+
+        if (up == undefined || down == undefined) return;
+
+        sidenums.Up[col][up][1] = sidenums.Up[col][up][1] - 1;
+        sidenums.Right[fila][down][1] = sidenums.Right[fila][down][1] - 1;
+
+        if (sidenums.Up[col][up][1] <= 0 || sidenums.Right[fila][down][1] <= 0) setSidenumCompleted((c) => !c);
+    }
+
     return (
-        <GameContext.Provider value={{ sizex: game ? game.sizex : null, sizey: game ? game.sizey : null, game, onGenerateGame, gameChanged, sidenums }}>
+        <GameContext.Provider value={{ 
+            sizex: game ? game.sizex : null, sizey: game ? game.sizey : null, 
+            game, onGenerateGame, gameChanged, 
+            sidenums, sideNumsCheck, sidenumCompleted 
+        }}>
             {children}
         </GameContext.Provider>
     );

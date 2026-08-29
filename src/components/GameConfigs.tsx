@@ -1,23 +1,23 @@
 import { useState } from "react";
 import { useGame } from "../ctx/gameCtx";
+import { useAuth } from "../ctx/userCtx";
 
 const PANEL_WIDTH = "18rem";
 
 export default function GameConfigs() {
+    const { openConfig, toggleOpenConfig } = useAuth();
     const { onGenerateGame } = useGame();
 
     const [sizex, setSizex] = useState(10);
     const [sizey, setSizey] = useState(10);
     const [difficulty, setDifficulty] = useState(5);
-
-    const [open, setOpen] = useState(true);
-
+    
     return(
         <div className="relative shrink-0 self-stretch">
             {/* Sliding panel */}
             <div
                 className="h-full overflow-hidden transition-[width] duration-300 ease-out"
-                style={{ width: open ? PANEL_WIDTH : "0rem" }}
+                style={{ width: openConfig ? PANEL_WIDTH : "0rem" }}
             >
                 <div className="h-full rounded-xl border border-border bg-bg p-6 shadow-[var(--shadow)]" style={{ width: PANEL_WIDTH }}>
                     <h2 className="mb-5 text-base font-semibold text-text-h">Game settings</h2>
@@ -36,15 +36,15 @@ export default function GameConfigs() {
             </div>
             {/* Pull tab */}
             <button
-                onClick={() => setOpen((o) => !o)}
-                aria-label={open ? "Hide game settings" : "Show game settings"}
-                aria-expanded={open}
+                onClick={() => toggleOpenConfig()}
+                aria-label={openConfig ? "Hide game settings" : "Show game settings"}
+                aria-expanded={openConfig}
                 className="absolute top-1/2 z-10 flex h-16 w-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded-r-lg border border-l-0 border-border bg-bg text-text shadow-[var(--shadow)] transition-[left] duration-300 ease-out hover:bg-accent-bg hover:text-accent"
-                style={{ left: open ? PANEL_WIDTH : "0rem" }}
+                style={{ left: openConfig ? PANEL_WIDTH : "0rem" }}
             >
                 <svg
                     viewBox="0 0 24 24"
-                    className={`h-4 w-4 transition-transform duration-300 ${open ? "rotate-180" : ""}`}
+                    className={`h-4 w-4 transition-transform duration-300 ${openConfig ? "rotate-180" : ""}`}
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="2.5"

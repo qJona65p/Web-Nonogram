@@ -11,6 +11,8 @@ interface UserCtxProps {
     lives: number;
     loseLive: () => void;
     resetLives: () => void;
+    openConfig: boolean;
+    toggleOpenConfig: () => void;
 }
 
 const AuthContext = createContext<UserCtxProps | undefined>(undefined);
@@ -18,11 +20,14 @@ const AuthContext = createContext<UserCtxProps | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [username, setUsername] = useState<string | null>(null);
     const [lives, setLives] = useState(MAX_LIVES);
+    const [openConfig, setOpenConfig] = useState(true);
 
     // Load username from localStorage on initial mount
     useEffect(() => {
         const savedUsername = localStorage.getItem('username');
         if (savedUsername) setUsername(savedUsername);
+        const savedConfig = localStorage.getItem('menuConfig');
+        if (savedConfig) setOpenConfig(savedConfig == "true");
     }, []);
 
     const login = (inputToken: string) => {
@@ -39,8 +44,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const resetLives = () => setLives(MAX_LIVES);
 
+    const toggleOpenConfig = () => {
+        localStorage.setItem('menuConfig', openConfig ? "false" : "true");
+        setOpenConfig((o) => !o);
+    }
+
     return (
-        <AuthContext.Provider value={{ username, login, logout, lives, loseLive, resetLives }}>
+        <AuthContext.Provider value={{ username, login, logout, lives, loseLive, resetLives, openConfig, toggleOpenConfig }}>
             {children}
         </AuthContext.Provider>
     );

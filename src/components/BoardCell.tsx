@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "../ctx/userCtx";
 import { handleClick } from "../lib/funcs";
+import { useGame } from "../ctx/gameCtx";
 
 export interface BoardCellProps {
     cell: number,
@@ -11,6 +12,7 @@ export interface BoardCellProps {
 
 export default function BoardCell({ cell, col, fila, initialValue }: BoardCellProps) {
     const { username, lives, loseLive } = useAuth();
+    const { sideNumsCheck } = useGame();
     const [value, setValue] = useState<boolean | null>(initialValue); 
 
     if (username == null) return;
@@ -19,17 +21,21 @@ export default function BoardCell({ cell, col, fila, initialValue }: BoardCellPr
         <td
             key={col}
             onClick={() => {
-                console.log("vidas: ", lives);
                 if (lives > 0) {
-                    if (value == null) handleClick(username, fila, col, true, (val) => { setValue(val) }, () => { loseLive() } )
+                    if (value == null) {
+                        handleClick(username, fila, col, true, (val) => { setValue(val) }, () => { loseLive(); } )
+                        sideNumsCheck(fila, col);
+                    }
                 }
                 else console.log("morto");
             }}
             onContextMenu={(e) => {
                 e.preventDefault();
-                console.log("vidas: ", lives);
                 if (lives > 0) {
-                    if (value == null) handleClick(username, fila, col, false, (val) => { setValue(val) }, () => { loseLive() } )
+                    if (value == null) {
+                        handleClick(username, fila, col, false, (val) => { setValue(val) }, () => { loseLive(); } )
+                        sideNumsCheck(fila, col);
+                    }
                 }
                     else console.log("morto");
             }}
@@ -43,6 +49,6 @@ export default function BoardCell({ cell, col, fila, initialValue }: BoardCellPr
                 borderTopWidth: fila % 5 === 0 ? "2px" : undefined,
                 borderTopColor: fila % 5 === 0 ? "var(--border)" : undefined,
             }}
-        />
+        ></td>
     );
 }

@@ -23,61 +23,65 @@ export function getBlankGame(sizex: number, sizey: number, nulls: boolean = fals
     return Array.from({ length: sizex }, () => Array(sizey).fill(nulls ? null : false));
 }
 
-export function getBlankGameCopy(sizex: number, sizey: number) {
-    return Array.from({ length: sizex }, () => Array(sizey).fill(Array()));
+export function getBlankGameCopy(sizex: number, sizey: number): number[][][] {
+    return Array.from({ length: sizex }, () => Array.from({ length: sizey }, () => []));
 }
 
 export function numberCount(game: Game): SideNums{
-    let arrayUpNum: number[][] = [];
-    let arraySideNum: number[][] = [];
-    let gamecopy = getBlankGameCopy(25, 25);
+    let arrayUpNum: number[][][] = [];
+    let arraySideNum: number[][][] = [];
+    let gamecopy = getBlankGameCopy(game.sizex, game.sizey);
 
     let count: number = 0;
-    let arrayCount: number[] = [];
+    let arrayCount: number[][] = [];
     let countId: number = 0;
 
     for (let x = 0; x < game.sizex; x++) {
         for (let y = 0; y < game.sizey; y++) {
-            if (game.values[x][y]){
-                gamecopy[x][y].push([x,y]);
+            if (game.values[x][y]) {
+                gamecopy[x][y].push(countId);
                 count++;
             } else {
-                if (count != 0) {
-                    arrayCount.push(count);
+                if (count > 0) {
+                    arrayCount.push([count, count]);
                     count = 0;
                     countId++;
                 }
-                gamecopy[x][y] = [0];
+                gamecopy[x][y] = [-1];
             }
         }
-        if (count != 0) {
-            arrayCount.push(count);
+        if (count > 0) {
+            arrayCount.push([count, count]);
             count = 0;
         }
         arraySideNum.push(arrayCount);
         arrayCount = [];
+        countId = 0;
     }
 
+    countId = 0;
+    
     for (let y = 0; y < game.sizey; y++) {
         for (let x = 0; x < game.sizex; x++) {
             if (game.values[x][y]) {
-                gamecopy[x][y].push([x, y]);
+                gamecopy[x][y].push(countId);
                 count++;
             } else {
                 if (count != 0) {
-                    arrayCount.push(count);
+                    arrayCount.push([count, count]);
                     count = 0;
                     countId++;
                 }
-                gamecopy[x][y] = [0];
+                gamecopy[x][y] = [-1];
             }
         }
         if (count != 0) {
-            arrayCount.push(count);
+            arrayCount.push([count, count]);
             count = 0;
         }
         arrayUpNum.push(arrayCount);
         arrayCount = [];
+        countId = 0;
     }
 
     return { Right: arraySideNum, Up: arrayUpNum, GameNums: gamecopy }

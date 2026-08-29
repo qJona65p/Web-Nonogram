@@ -28,10 +28,11 @@ export default function SideNumbers({ cell }: UpperProps) {
 
                     return (
                         <td key={col} className="px-0.5 pb-1 text-center align-bottom" style={{ width: cell }}>
-                            <div className="text-[clamp(9px,1.4vmin,14px)] font-medium leading-none tabular-nums text-text">
+                            <div className={`text-[clamp(9px,1.4vmin,16px)] leading-none tabular-nums text-text 
+                                    ${sidenums.Up[col][fila - spaces] != undefined && sidenums.Up[col][fila - spaces][1] <= 0 ? "font-bold" : "font-medium"}`}>
                                 {emptyColumn && fila === maxItems - 1
                                     ? "0" : fila >= spaces
-                                    ? Items[col][fila - spaces] : " "}
+                                    ? Items[col][fila - spaces][0] : " "}
                             </div>
                         </td>
                     );
