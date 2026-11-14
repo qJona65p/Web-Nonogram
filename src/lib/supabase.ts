@@ -16,7 +16,7 @@ export async function getGame(): Promise<Game | null> {
 
     for (let from = 0; ; from += PAGE_SIZE) {
         const { data, error } = await supabase
-            .from('game')
+            .from('board')
             .select('x, y, value')
             .order('x', { ascending: true })
             .order('y', { ascending: true })
@@ -66,13 +66,13 @@ export async function getMoves(): Promise<Move[]> {
  */
 export async function resetGame(game: Game) {
     const { error: gameDeleteError } = await supabase
-        .from('game')
+        .from('board')
         .delete()
         .gte('x', 0);
 
     if (gameDeleteError) throw gameDeleteError;
 
-    const { error: gameInsertError } = await supabase.from('game').insert(getGameCells(game));
+    const { error: gameInsertError } = await supabase.from('board').insert(getGameCells(game));
 
     if (gameInsertError) throw gameInsertError;
 
@@ -117,5 +117,9 @@ export async function submitUsername(username: string): Promise<boolean> {
 }
 
 export async function getScores() {
-    return await supabase.from('players').select("username, won, lose, score");
+    return await supabase.from('players').select("username, won, lose, played, total_score, current_score");
+}
+
+export async function getGameDetails() {
+    return await supabase.from('game').select("started_at, players");
 }
