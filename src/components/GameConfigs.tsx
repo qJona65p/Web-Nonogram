@@ -11,7 +11,24 @@ export default function GameConfigs() {
     const [sizex, setSizex] = useState(10);
     const [sizey, setSizey] = useState(10);
     const [difficulty, setDifficulty] = useState(5);
-    
+    const [generating, setGenerating] = useState(false);
+
+    async function handleGenerate() {
+        if (generating) return;
+
+        const confirmed = window.confirm(
+            "Generate a new puzzle? This clears the board for everyone connected."
+        );
+        if (!confirmed) return;
+
+        setGenerating(true);
+        try {
+            await onGenerateGame(sizex, sizey, difficulty);
+        } finally {
+            setGenerating(false);
+        }
+    }
+
     return(
         <div className="relative shrink-0 self-stretch">
             {/* Sliding panel */}
@@ -21,7 +38,7 @@ export default function GameConfigs() {
             >
                 <div className="h-full rounded-xl border border-border bg-bg p-6 shadow-[var(--shadow)]" style={{ width: PANEL_WIDTH }}>
                     <h2 className="mb-5 text-base font-semibold text-text-h">Game settings</h2>
-                    
+
                     <div className="space-y-5">
                         <SliderField label="Width" value={sizex} min={3} max={50} onChange={setSizex} />
                         <SliderField label="Height" value={sizey} min={3} max={50} onChange={setSizey} />
@@ -29,9 +46,10 @@ export default function GameConfigs() {
                     </div>
 
                     <button
-                        onClick={() => onGenerateGame(sizex, sizey, difficulty / 10)}
-                        className="mt-6 w-full cursor-pointer rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white transition-[filter,transform] hover:brightness-110 active:scale-[0.98]"
-                    >Generate game</button>
+                        onClick={handleGenerate}
+                        disabled={generating}
+                        className="mt-6 w-full cursor-pointer rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white transition-[filter,transform] hover:brightness-110 active:scale-[0.98] disabled:cursor-default disabled:opacity-60"
+                    >{generating ? "Generating…" : "Generate game"}</button>
                 </div>
             </div>
             {/* Pull tab */}

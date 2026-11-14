@@ -1,46 +1,29 @@
-import { useState } from "react";
-import { useAuth } from "../ctx/userCtx";
-import { handleClick } from "../lib/funcs";
-import { useGame } from "../ctx/gameCtx";
+import { memo } from "react";
 
 export interface BoardCellProps {
-    cell: number,
-    col: number,
-    fila: number,
-    initialValue: boolean | null
+    cell: number;
+    col: number;
+    fila: number;
+    value: boolean | null;
+    disabled: boolean;
+    onPlay: (x: number, y: number, intent: boolean) => void;
 }
 
-export default function BoardCell({ cell, col, fila, initialValue }: BoardCellProps) {
-    const { username, lives, loseLive } = useAuth();
-    const { sideNumsCheck } = useGame();
-    const [value, setValue] = useState<boolean | null>(initialValue); 
-
-    if (username == null) return;
+function BoardCell({ cell, col, fila, value, disabled, onPlay }: BoardCellProps) {
+    const locked = disabled || value != null;
 
     return (
         <td
-            key={col}
             onClick={() => {
-                if (lives > 0) {
-                    if (value == null) {
-                        handleClick(username, fila, col, true, (val) => { setValue(val) }, () => { loseLive(); } )
-                        sideNumsCheck(fila, col);
-                    }
-                }
-                else console.log("morto");
+                if (!locked) onPlay(fila, col, true);
             }}
             onContextMenu={(e) => {
                 e.preventDefault();
-                if (lives > 0) {
-                    if (value == null) {
-                        handleClick(username, fila, col, false, (val) => { setValue(val) }, () => { loseLive(); } )
-                        sideNumsCheck(fila, col);
-                    }
-                }
-                    else console.log("morto");
+                if (!locked) onPlay(fila, col, false);
             }}
-            className={`nonogram-cell cursor-pointer border border-border/60 p-0 transition-colors duration-100 
-                ${value != null ? (value ? "bg-bg hover:bg-accent-bg" : "bg-text-h") : "bg-slate-500 hover:bg-slate-600"}`}
+            className={`nonogram-cell border border-border/60 p-0 transition-colors duration-100 ${
+                locked ? "cursor-default" : "cursor-pointer"
+            } ${value != null ? (value ? "bg-bg hover:bg-accent-bg" : "bg-text-h") : "bg-slate-500 hover:bg-slate-600"}`}
             style={{
                 width: cell,
                 height: cell,
@@ -52,3 +35,5 @@ export default function BoardCell({ cell, col, fila, initialValue }: BoardCellPr
         ></td>
     );
 }
+
+export default memo(BoardCell);

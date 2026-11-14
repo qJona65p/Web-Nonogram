@@ -6,14 +6,14 @@ import Status from "./Status";
 import { useGame } from "../ctx/gameCtx";
 
 interface PuzzleGridProps {
-    playerGame: (boolean | null)[][];
+    board: (boolean | null)[][];
 }
 
 const MIN_CELL = 8;
 const MAX_CELL = 72;
 const BOTTOM_MARGIN = 16;
 
-export default function PuzzleGrid({ playerGame }: PuzzleGridProps) {
+export default function PuzzleGrid({ board }: PuzzleGridProps) {
     const { sizex, sizey } = useGame();
 
     const containerRef = useRef<HTMLDivElement>(null);
@@ -73,7 +73,7 @@ export default function PuzzleGrid({ playerGame }: PuzzleGridProps) {
                 <div ref={sideRef} className="justify-self-end">
                     <SideNumbers cell={cell} /> 
                 </div>
-                <Board playerGame={playerGame} cell={cell} />
+                <Board board={board} cell={cell} />
             </div>
         </div>
     );

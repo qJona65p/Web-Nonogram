@@ -1,6 +1,9 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+/* eslint-disable react-refresh/only-export-components */
+
+import { createContext, useCallback, useContext, useState, useEffect, type ReactNode } from 'react';
+import { submitUsername } from '../lib/supabase';
 
 export const MAX_LIVES = 5;
 
@@ -18,36 +21,43 @@ interface UserCtxProps {
 const AuthContext = createContext<UserCtxProps | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-    const [username, setUsername] = useState<string | null>(null);
+    // Restore the saved session during the first render (lazy initializer)
+    // instead of setting state from an effect.
+    const [username, setUsername] = useState<string | null>(
+        () => localStorage.getItem('username')
+    );
     const [lives, setLives] = useState(MAX_LIVES);
-    const [openConfig, setOpenConfig] = useState(true);
+    const [openConfig, setOpenConfig] = useState<boolean>(
+        () => localStorage.getItem('menuConfig') !== "false"
+    );
 
-    // Load username from localStorage on initial mount
+    // Make sure restored sessions (and newly logged-in ones) still have a row
+    // in `players`; moves have a foreign key to it.
     useEffect(() => {
-        const savedUsername = localStorage.getItem('username');
-        if (savedUsername) setUsername(savedUsername);
-        const savedConfig = localStorage.getItem('menuConfig');
-        if (savedConfig) setOpenConfig(savedConfig == "true");
+        if (username != null) void submitUsername(username).catch(console.error);
+    }, [username]);
+
+    const login = useCallback((inputUsername: string) => {
+        const next = inputUsername.trim();
+        localStorage.setItem('username', next);
+        setUsername(next);
     }, []);
 
-    const login = (inputToken: string) => {
-        localStorage.setItem('username', inputToken.trim());
-        setUsername(inputToken.trim());
-    };
-
-    const logout = () => {
+    const logout = useCallback(() => {
         localStorage.removeItem('username');
         setUsername(null);
-    };
+    }, []);
 
-    const loseLive = () => setLives((l) => Math.max(l - 1, 0));
+    const loseLive = useCallback(() => setLives((l) => Math.max(l - 1, 0)), []);
 
-    const resetLives = () => setLives(MAX_LIVES);
+    const resetLives = useCallback(() => setLives(MAX_LIVES), []);
 
-    const toggleOpenConfig = () => {
-        localStorage.setItem('menuConfig', openConfig ? "false" : "true");
-        setOpenConfig((o) => !o);
-    }
+    const toggleOpenConfig = useCallback(() => {
+        setOpenConfig((open) => {
+            localStorage.setItem('menuConfig', open ? "false" : "true");
+            return !open;
+        });
+    }, []);
 
     return (
         <AuthContext.Provider value={{ username, login, logout, lives, loseLive, resetLives, openConfig, toggleOpenConfig }}>
