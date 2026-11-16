@@ -1,4 +1,4 @@
-import type { Cell, Clues, ClueRun, Game, Move, SideNums } from "./types";
+import type { Cell, Clues, ClueRun, Game, Move, SideNums, StoredGame } from "./types";
 
 export function generateGame(sizex: number, sizey: number, difficulty: number): Game {
     if (difficulty > 0.8) difficulty = 0.8;
@@ -34,31 +34,35 @@ export function getGameCells(game: Game): Cell[] {
     return cells;
 }
 
-/**
- * Turn the persisted moves into the shared board. Moves are applied in the
- * order they were read (ascending id), so the most recent move wins.
- */
-export function boardFromMoves(game: Game, moves: Move[]): (boolean | null)[][] {
-    const board = getBlankGame(game.sizex, game.sizey, true) as (boolean | null)[][];
+export function applyMoves(
+    board: (boolean | null)[][],
+    moves: Move[]
+): (boolean | null)[][] {
+    let next = board;
 
     for (const move of moves) {
-        if (move.x < 0 || move.y < 0 || move.x >= game.sizex || move.y >= game.sizey) continue;
-        board[move.x][move.y] = move.value;
+        const column = next[move.x];
+        if (column == null || move.y < 0 || move.y >= column.length) continue;
+        if (column[move.y] != null) continue;
+
+        next = setCell(next, move.x, move.y, move.value);
     }
 
-    return board;
+    return next;
 }
 
-export function sameGame(a: Game, b: Game): boolean {
-    if (a.sizex !== b.sizex || a.sizey !== b.sizey) return false;
-
-    for (let x = 0; x < a.sizex; x++) {
-        for (let y = 0; y < a.sizey; y++) {
-            if (a.values[x][y] !== b.values[x][y]) return false;
+export function isSolved(game: Game, board: (boolean | null)[][]): boolean {
+    for (let x = 0; x < game.sizex; x++) {
+        for (let y = 0; y < game.sizey; y++) {
+            if (game.values[x][y] === true && board[x][y] !== true) return false;
         }
     }
 
     return true;
+}
+
+export function sameGame(a: StoredGame, b: StoredGame): boolean {
+    return a.id === b.id;
 }
 
 export function setCell(
@@ -70,26 +74,6 @@ export function setCell(
     const next = board.map((column) => column.slice());
     next[x][y] = value;
     return next;
-}
-
-/**
- * Merge a freshly loaded board into the current one. Cells already resolved
- * locally are kept so an in-flight move is not lost while a sync is running.
- */
-export function mergeBoards(
-    current: (boolean | null)[][],
-    incoming: (boolean | null)[][]
-): (boolean | null)[][] {
-    if (
-        current.length !== incoming.length ||
-        (current[0]?.length ?? 0) !== (incoming[0]?.length ?? 0)
-    ) {
-        return incoming;
-    }
-
-    return incoming.map((column, x) =>
-        column.map((value, y) => (value == null ? current[x][y] : value))
-    );
 }
 
 /**

@@ -4,6 +4,11 @@ export interface Game {
     values: (boolean | null)[][];
 }
 
+export interface StoredGame extends Game {
+    id: number;
+    ended: boolean;
+}
+
 export interface Cell {
     x: number;
     y: number;
@@ -16,6 +21,8 @@ export interface Move {
     y: number;
     value: boolean;
     username: string;
+    /** true when the cell was filled automatically by a completed line */
+    auto?: boolean;
 }
 
 export interface OnlinePlayer {

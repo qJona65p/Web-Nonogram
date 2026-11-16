@@ -11,7 +11,7 @@ interface PresenceMeta {
 }
 
 export interface GameHandlers {
-    onMove: (move: Move) => void;
+    onMoves: (moves: Move[]) => void;
     onPresence: (players: OnlinePlayer[]) => void;
     onStatus: (status: ConnectionStatus) => void;
     onSubscribed: () => void;
@@ -19,7 +19,7 @@ export interface GameHandlers {
 }
 
 export interface GameChannel {
-    sendMove: (move: Move) => void;
+    sendMoves: (moves: Move[]) => void;
     announceReset: () => void;
     unsubscribe: () => void;
 }
@@ -33,8 +33,8 @@ export function subscribeToGame(username: string, handlers: GameHandlers): GameC
     });
 
     channel
-        .on('broadcast', { event: 'move' }, ({ payload }) => {
-            handlers.onMove(payload as Move);
+        .on('broadcast', { event: 'moves' }, ({ payload }) => {
+            handlers.onMoves((payload as { moves?: Move[] }).moves ?? []);
         })
         .on('broadcast', { event: 'reset' }, () => {
             handlers.onReset();
@@ -47,7 +47,7 @@ export function subscribeToGame(username: string, handlers: GameHandlers): GameC
             'postgres_changes',
             { event: 'INSERT', schema: 'public', table: 'movements' },
             (payload) => {
-                handlers.onMove(payload.new as Move);
+                handlers.onMoves([payload.new as Move]);
             }
         )
         .on('presence', { event: 'sync' }, () => {
@@ -81,8 +81,8 @@ export function subscribeToGame(username: string, handlers: GameHandlers): GameC
         });
 
     return {
-        sendMove: (move) => {
-            void channel.send({ type: 'broadcast', event: 'move', payload: move });
+        sendMoves: (moves) => {
+            void channel.send({ type: 'broadcast', event: 'moves', payload: { moves } });
         },
         announceReset: () => {
             void channel.send({ type: 'broadcast', event: 'reset', payload: {} });

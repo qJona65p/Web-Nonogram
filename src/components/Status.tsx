@@ -1,4 +1,5 @@
-import { useAuth, MAX_LIVES } from "../ctx/userCtx";
+import { useAuth } from "../ctx/userCtx";
+import { MAX_LIVES } from "../lib/constants";
 
 export default function Status() {
     const { lives } = useAuth();

@@ -8,14 +8,14 @@ interface BoardProps {
 }
 
 export default function Board({ board, cell }: BoardProps) {
-    const { sizex, sizey, playCell } = useGame();
+    const { sizex, sizey, game, playCell } = useGame();
     const { lives } = useAuth();
 
     if (sizex == null || sizey == null) return null;
 
     const filas = new Array(sizex).fill(null).map((_, i) => i);
     const columnas = new Array(sizey).fill(null).map((_, i) => i);
-    const disabled = lives <= 0;
+    const disabled = lives <= 0 || (game?.ended ?? false);
 
     return (
         <table

@@ -3,7 +3,7 @@
 /* eslint-disable react-refresh/only-export-components */
 
 import { createContext, useCallback, useContext, useState, useEffect, type ReactNode } from 'react';
-import { submitUsername } from '../lib/supabase';
+import { getUserLives, submitUsername } from '../lib/supabase';
 
 export const MAX_LIVES = 5;
 
@@ -12,7 +12,7 @@ interface UserCtxProps {
     login: (inputusername: string) => void;
     logout: () => void;
     lives: number;
-    loseLive: () => void;
+    syncLives: (value: number) => void;
     resetLives: () => void;
     openConfig: boolean;
     toggleOpenConfig: () => void;
@@ -32,9 +32,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
 
     // Make sure restored sessions (and newly logged-in ones) still have a row
-    // in `players`; moves have a foreign key to it.
+    // in `players`, then hydrate lives from the database. Lives are never
+    // written from the client; `play_turn` and `reset_game` own them.
     useEffect(() => {
-        if (username != null) void submitUsername(username).catch(console.error);
+        if (username == null) return;
+
+        let cancelled = false;
+
+        (async () => {
+            await submitUsername(username);
+            const stored = await getUserLives(username);
+            if (!cancelled) setLives(stored);
+        })().catch((error) => console.error('Could not load lives', error));
+
+        return () => {
+            cancelled = true;
+        };
     }, [username]);
 
     const login = useCallback((inputUsername: string) => {
@@ -48,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUsername(null);
     }, []);
 
-    const loseLive = useCallback(() => setLives((l) => Math.max(l - 1, 0)), []);
+    const syncLives = useCallback((value: number) => setLives(value), []);
 
     const resetLives = useCallback(() => setLives(MAX_LIVES), []);
 
@@ -60,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, []);
 
     return (
-        <AuthContext.Provider value={{ username, login, logout, lives, loseLive, resetLives, openConfig, toggleOpenConfig }}>
+        <AuthContext.Provider value={{ username, login, logout, lives, syncLives, resetLives, openConfig, toggleOpenConfig }}>
             {children}
         </AuthContext.Provider>
     );
