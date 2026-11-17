@@ -13,7 +13,9 @@ function BoardCell({ cell, col, fila, value, disabled, onPlay }: BoardCellProps)
     const locked = disabled || value != null;
 
     return (
-        <td
+        <div
+            data-x={fila}
+            data-y={col}
             onClick={() => {
                 if (!locked) onPlay(fila, col, true);
             }}
@@ -21,18 +23,17 @@ function BoardCell({ cell, col, fila, value, disabled, onPlay }: BoardCellProps)
                 e.preventDefault();
                 if (!locked) onPlay(fila, col, false);
             }}
-            className={`nonogram-cell border border-border/60 p-0 transition-colors duration-100 ${
+            className={`nonogram-cell border-r border-b border-border/60 p-0 transition-colors duration-100 ${
                 locked ? "cursor-default" : "cursor-pointer"
             } ${value != null ? (value ? "bg-bg hover:bg-accent-bg" : "bg-text-h") : "bg-slate-500 hover:bg-slate-600"}`}
             style={{
                 width: cell,
                 height: cell,
-                borderLeftWidth: col % 5 === 0 ? "2px" : undefined,
-                borderLeftColor: col % 5 === 0 ? "var(--border)" : undefined,
-                borderTopWidth: fila % 5 === 0 ? "2px" : undefined,
-                borderTopColor: fila % 5 === 0 ? "var(--border)" : undefined,
+                boxSizing: "border-box",
+                borderRightWidth: (col + 1) % 5 === 0 ? 2 : undefined,
+                borderBottomWidth: (fila + 1) % 5 === 0 ? 2 : undefined,
             }}
-        ></td>
+        ></div>
     );
 }
 
