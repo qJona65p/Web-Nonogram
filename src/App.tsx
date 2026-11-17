@@ -21,7 +21,7 @@ export default function App() {
     return (
         <main className="mx-auto flex w-full flex-1 flex-col sm:flex-row sm:items-stretch">
             <GameConfigs />
-            <section className="flex flex-1 items-center justify-center overflow-auto py-2">
+            <section className="flex min-h-0 flex-1 items-start justify-center overflow-auto py-2 [scrollbar-gutter:stable]">
                 <PuzzleGrid board={board} />
             </section>
         </main>
