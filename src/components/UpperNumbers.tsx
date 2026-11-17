@@ -11,7 +11,7 @@ export default function UpperNumbers({ cell, hoveredCol }: UpperProps) {
 
     const items = sidenums.Up;
     const columnas = new Array(sizey).fill(null).map((_, i) => i);
-    const clueFont = Math.max(6, Math.min(16, cell * 0.62));
+    const clueFont = Math.max(10, Math.min(16, cell * 0.7));
     const gap = Math.max(1, Math.round(cell * 0.08));
 
     return (
@@ -23,13 +23,14 @@ export default function UpperNumbers({ cell, hoveredCol }: UpperProps) {
                 const runs = items[col] ?? [];
                 const emptyColumn = runs.length === 0;
                 const highlighted = hoveredCol === col;
+                const lineCompleted = !emptyColumn && runs.every((run) => run[1] <= 0);
 
                 return (
                     <div
                         key={col}
-                        className={`flex flex-col items-center justify-end tabular-nums transition-colors duration-100 ${
-                            highlighted ? "bg-accent-bg text-accent" : "text-text"
-                        }`}
+                        className={`flex flex-col items-center justify-end tabular-nums transition-[color,background-color,box-shadow] duration-150 ${
+                            highlighted ? "bg-accent-bg" : ""
+                        } ${highlighted || lineCompleted ? "text-accent" : "text-text"}`}
                         style={{
                             width: cell,
                             paddingTop: gap,
@@ -37,19 +38,28 @@ export default function UpperNumbers({ cell, hoveredCol }: UpperProps) {
                             gap,
                             fontSize: clueFont,
                             lineHeight: 1,
+                            boxShadow: lineCompleted ? "inset 0 -2px 0 var(--accent)" : undefined,
                         }}
                     >
                         {emptyColumn ? (
                             <span className="font-medium">0</span>
                         ) : (
-                            runs.map((run, index) => (
-                                <span
-                                    key={index}
-                                    className={run[1] <= 0 ? "font-bold" : "font-medium"}
-                                >
-                                    {run[0]}
-                                </span>
-                            ))
+                            runs.map((run, index) => {
+                                const completed = run[1] <= 0;
+
+                                return (
+                                    <span
+                                        key={index}
+                                        className={
+                                            completed
+                                                ? "font-bold text-accent/50 line-through decoration-2"
+                                                : "font-medium"
+                                        }
+                                    >
+                                        {run[0]}
+                                    </span>
+                                );
+                            })
                         )}
                     </div>
                 );

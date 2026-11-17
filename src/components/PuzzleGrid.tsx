@@ -11,7 +11,7 @@ interface PuzzleGridProps {
 
 // Keep cells readable; when the puzzle does not fit at this size the whole
 // grid scrolls instead of shrinking the clues into illegibility.
-const MIN_CELL = 14;
+const MIN_CELL = 16;
 const MAX_CELL = 72;
 const BOTTOM_MARGIN = 16;
 
@@ -19,7 +19,7 @@ const BOTTOM_MARGIN = 16;
 // gutters use the same cell tracks as the board, so only the space they
 // reserve for sizing needs to be estimated here.
 const CLUE_WIDTH_SCALE = 0.55;
-const CLUE_HEIGHT_SCALE = 0.72;
+const CLUE_HEIGHT_SCALE = 0.8;
 const LAYOUT_GAP = 4;
 
 export default function PuzzleGrid({ board }: PuzzleGridProps) {
