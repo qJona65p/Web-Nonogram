@@ -12,7 +12,7 @@ export default function SideNumbers({ cell, hoveredRow }: SideProps) {
     const items = sidenums.Right;
     const filas = new Array(sizex).fill(null).map((_, i) => i);
     const clueFont = Math.max(10, Math.min(16, cell * 0.7));
-    const gap = Math.max(1, Math.round(cell * 0.08));
+    const gap = Math.max(1, Math.round(cell * 0.08)) + 3;
 
     return (
         <div
