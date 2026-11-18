@@ -52,7 +52,7 @@ export default function UpperNumbers({ cell, hoveredCol }: UpperProps) {
                                         key={index}
                                         className={
                                             completed
-                                                ? "font-bold text-accent/50 line-through decoration-2"
+                                                ? "font-bold text-accent/40 decoration-2"
                                                 : "font-medium"
                                         }
                                     >
