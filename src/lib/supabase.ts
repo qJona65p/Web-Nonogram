@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Cell, Game, Move, StoredGame } from './types';
 import { getBlankGame, getGameCells } from './funcs';
-import { MAX_LIVES } from '../ctx/userCtx';
+import { DEFAULT_DIFFICULTY, MAX_BOARD_SIZE, MAX_LIVES, MIN_BOARD_SIZE } from './constants';
 
 const supabaseUrl = import.meta.env.VITE_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_PUBLIC_SUPABASE_ANON_KEY;
@@ -9,14 +9,18 @@ const supabaseAnonKey = import.meta.env.VITE_PUBLIC_SUPABASE_ANON_KEY;
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // PostgREST caps responses at 1000 rows by default, so every full-table read
-// has to page through the result. A 50x50 board has 2500 cells.
+// has to page through the result. Large boards (and their move history) can
+// reach ten thousand rows.
 const PAGE_SIZE = 1000;
 
 interface GameHeader {
     id: number;
     sizex: number;
     sizey: number;
+    started_at: string;
     ended_at: string | null;
+    difficulty: number | null;
+    lives_lost: number | null;
 }
 
 export async function getGame(): Promise<StoredGame | null> {
@@ -24,7 +28,7 @@ export async function getGame(): Promise<StoredGame | null> {
     // visible after a reload so the solved board is not lost.
     const { data: header, error: headerError } = await supabase
         .from('games')
-        .select('id, sizex, sizey, ended_at')
+        .select('id, sizex, sizey, started_at, ended_at, difficulty, lives_lost')
         .order('id', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -33,6 +37,26 @@ export async function getGame(): Promise<StoredGame | null> {
     if (header == null) return null;
 
     const game = header as GameHeader;
+
+    // `reset_game` is executable by anon, so a crafted call can still store a
+    // size outside the UI's range even though the client clamps before
+    // sending. Refuse to allocate a board we were not designed for; the
+    // bootstrap path then replaces it with a default game.
+    if (
+        !Number.isInteger(game.sizex) ||
+        !Number.isInteger(game.sizey) ||
+        game.sizex < MIN_BOARD_SIZE ||
+        game.sizex > MAX_BOARD_SIZE ||
+        game.sizey < MIN_BOARD_SIZE ||
+        game.sizey > MAX_BOARD_SIZE
+    ) {
+        console.warn(
+            `Ignoring the active game: ${game.sizex}x${game.sizey} is outside ` +
+            `${MIN_BOARD_SIZE}-${MAX_BOARD_SIZE}.`
+        );
+        return null;
+    }
+
     const cells: Cell[] = [];
 
     for (let from = 0; ; from += PAGE_SIZE) {
@@ -65,6 +89,10 @@ export async function getGame(): Promise<StoredGame | null> {
         sizey: game.sizey,
         values,
         ended: game.ended_at != null,
+        startedAt: game.started_at,
+        endedAt: game.ended_at,
+        difficulty: game.difficulty ?? DEFAULT_DIFFICULTY,
+        livesLost: Math.max(0, game.lives_lost ?? 0),
     };
 }
 
@@ -88,22 +116,52 @@ export async function getMoves(): Promise<Move[]> {
     return moves;
 }
 
+/** Header returned by `reset_game` for the freshly created game. */
+interface ResetResult {
+    id: number;
+    startedAt: string;
+    difficulty: number;
+    livesLost: number;
+}
+
 /**
  * Finalize the current game, replace the global puzzle and refill lives.
  * All of it happens atomically inside the `reset_game` function.
  */
-export async function resetGame(game: Game, username: string): Promise<StoredGame> {
+export async function resetGame(game: Game, username: string, difficulty: number): Promise<StoredGame> {
     const { data, error } = await supabase.rpc('reset_game', {
         p_sizex: game.sizex,
         p_sizey: game.sizey,
         p_cells: getGameCells(game),
         p_created_by: username,
         p_max_lives: MAX_LIVES,
+        p_difficulty: difficulty,
     });
 
     if (error) throw error;
 
-    return { ...game, id: data as number, ended: false };
+    const result = data as ResetResult;
+
+    if (
+        result == null ||
+        typeof result !== 'object' ||
+        typeof result.id !== 'number' ||
+        typeof result.startedAt !== 'string'
+    ) {
+        throw new Error(
+            'reset_game returned an unexpected payload. Check that the database function was migrated.'
+        );
+    }
+
+    return {
+        ...game,
+        id: result.id,
+        ended: false,
+        startedAt: result.startedAt,
+        endedAt: null,
+        difficulty: result.difficulty ?? difficulty,
+        livesLost: result.livesLost ?? 0,
+    };
 }
 
 export interface TurnResult {
@@ -113,6 +171,8 @@ export interface TurnResult {
     lives?: number;
     score?: number;
     ended?: boolean;
+    endedAt?: string | null;
+    livesLost?: number;
 }
 
 export async function playTurn(
@@ -172,6 +232,6 @@ export async function getScores() {
 export async function getGameDetails() {
     return await supabase
         .from('games')
-        .select('id, sizex, sizey, started_at, ended_at, created_by, winner')
+        .select('id, sizex, sizey, started_at, ended_at, difficulty, lives_lost, created_by, winner')
         .order('id', { ascending: false });
 }

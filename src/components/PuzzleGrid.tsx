@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 import Board, { type HoveredCell } from "./Board";
 import SideNumbers from "./SideNumbers";
 import UpperNumbers from "./UpperNumbers";
-import Status from "./Status";
+import GameHud from "./GameHud";
 import { useGame } from "../ctx/gameCtx";
 
 interface PuzzleGridProps {
@@ -88,8 +88,10 @@ export default function PuzzleGrid({ board }: PuzzleGridProps) {
                     className="grid gap-1"
                     style={{ gridTemplateColumns: "auto auto", gridTemplateRows: "auto auto" }}
                 >
-                    <Status />
-                    <UpperNumbers cell={cell} hoveredCol={activeHover?.y ?? null} />
+                    <GameHud />
+                    <div className="self-end">
+                        <UpperNumbers cell={cell} hoveredCol={activeHover?.y ?? null} />
+                    </div>
                     <SideNumbers cell={cell} hoveredRow={activeHover?.x ?? null} />
                     <Board
                         board={board}

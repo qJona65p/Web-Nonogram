@@ -1,6 +1,14 @@
 import { useState } from "react";
 import { useGame } from "../ctx/gameCtx";
 import { useAuth } from "../ctx/userCtx";
+import {
+    DEFAULT_BOARD_SIZE,
+    DEFAULT_DIFFICULTY,
+    MAX_BOARD_SIZE,
+    MAX_DIFFICULTY,
+    MIN_BOARD_SIZE,
+    MIN_DIFFICULTY,
+} from "../lib/constants";
 
 const PANEL_WIDTH = "18rem";
 
@@ -8,9 +16,9 @@ export default function GameConfigs() {
     const { openConfig, toggleOpenConfig } = useAuth();
     const { onGenerateGame } = useGame();
 
-    const [sizex, setSizex] = useState(10);
-    const [sizey, setSizey] = useState(10);
-    const [difficulty, setDifficulty] = useState(5);
+    const [sizex, setSizex] = useState(DEFAULT_BOARD_SIZE);
+    const [sizey, setSizey] = useState(DEFAULT_BOARD_SIZE);
+    const [difficulty, setDifficulty] = useState(DEFAULT_DIFFICULTY);
     const [generating, setGenerating] = useState(false);
 
     async function handleGenerate() {
@@ -40,9 +48,9 @@ export default function GameConfigs() {
                     <h2 className="mb-5 text-base font-semibold text-text-h">Game settings</h2>
 
                     <div className="space-y-5">
-                        <SliderField label="Width" value={sizex} min={3} max={50} onChange={setSizex} />
-                        <SliderField label="Height" value={sizey} min={3} max={50} onChange={setSizey} />
-                        <SliderField label="Difficulty" value={difficulty} min={0} max={10} onChange={setDifficulty} />
+                        <SliderField label="Width" value={sizex} min={MIN_BOARD_SIZE} max={MAX_BOARD_SIZE} onChange={setSizex} />
+                        <SliderField label="Height" value={sizey} min={MIN_BOARD_SIZE} max={MAX_BOARD_SIZE} onChange={setSizey} />
+                        <SliderField label="Difficulty" value={difficulty} min={MIN_DIFFICULTY} max={MAX_DIFFICULTY} onChange={setDifficulty} />
                     </div>
 
                     <button

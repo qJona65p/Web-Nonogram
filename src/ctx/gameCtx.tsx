@@ -3,17 +3,27 @@
 /* eslint-disable react-refresh/only-export-components */
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import type { ConnectionStatus, Move, OnlinePlayer, SideNums, StoredGame } from '../lib/types';
+import type { ConnectionStatus, GameStats, Move, OnlinePlayer, SideNums, StoredGame } from '../lib/types';
 import { getGame, getMoves, playTurn, resetGame, submitUsername } from '../lib/supabase';
 import { useAuth } from './userCtx';
 import {
     applyMoves,
+    clamp,
     computeClues,
     generateGame,
     getBlankGame,
+    normalizeDifficulty,
     progressSidenums,
     sameGame,
 } from '../lib/funcs';
+import {
+    DEFAULT_BOARD_SIZE,
+    DEFAULT_DIFFICULTY,
+    MAX_BOARD_SIZE,
+    MAX_DIFFICULTY,
+    MIN_BOARD_SIZE,
+    MIN_DIFFICULTY,
+} from '../lib/constants';
 import { subscribeToGame, type GameChannel } from '../lib/realtime';
 
 interface GameCtxProps {
@@ -84,7 +94,17 @@ export function GameProvider({ children }: { children: ReactNode }) {
             try {
                 let current = await loadGameWithRetries();
 
-                if (current == null) current = await resetGame(generateGame(10, 10, 0.5), username);
+                if (current == null) {
+                    current = await resetGame(
+                        generateGame(
+                            DEFAULT_BOARD_SIZE,
+                            DEFAULT_BOARD_SIZE,
+                            normalizeDifficulty(DEFAULT_DIFFICULTY)
+                        ),
+                        username,
+                        DEFAULT_DIFFICULTY
+                    );
+                }
 
                 const moves = await getMoves();
                 if (cancelled) return;
@@ -127,27 +147,74 @@ export function GameProvider({ children }: { children: ReactNode }) {
         if (previous != null && !sameGame(previous, current)) resetLives();
     }, [commitBoard, resetLives]);
 
-    const applyRemoteMoves = useCallback((moves: Move[]) => {
+    const applyRemoteMoves = useCallback((moves: Move[], stats?: GameStats) => {
         const current = latest.current.game;
         const visible = boardRef.current;
-        if (current == null || visible == null) return;
+        const gameId = typeof stats?.gameId === 'number' ? stats.gameId : undefined;
 
-        // The server is authoritative for fills; only reject malformed or
-        // out-of-range rows here.
-        const valid = moves.filter((move) =>
-            move != null &&
-            Number.isInteger(move.x) &&
-            Number.isInteger(move.y) &&
-            typeof move.value === 'boolean' &&
-            move.x >= 0 &&
-            move.y >= 0 &&
-            move.x < current.sizex &&
-            move.y < current.sizey
-        );
+        // A broadcast from a game we already replaced must not leak moves or
+        // stats (lives lost, ended) into the new puzzle.
+        if (gameId != null && current != null && gameId !== current.id) return;
 
-        if (valid.length === 0) return;
+        if (current != null && visible != null) {
+            // The server is authoritative for fills; only reject malformed or
+            // out-of-range rows here.
+            const valid = moves.filter((move) =>
+                move != null &&
+                Number.isInteger(move.x) &&
+                Number.isInteger(move.y) &&
+                typeof move.value === 'boolean' &&
+                move.x >= 0 &&
+                move.y >= 0 &&
+                move.x < current.sizex &&
+                move.y < current.sizey
+            );
 
-        commitBoard(applyMoves(visible, valid));
+            if (valid.length > 0) commitBoard(applyMoves(visible, valid));
+        }
+
+        if (stats == null) return;
+
+        // Broadcasts are client-sent, so keep obviously broken values out.
+        const livesLost =
+            typeof stats.livesLost === 'number' &&
+            Number.isInteger(stats.livesLost) &&
+            stats.livesLost >= 0
+                ? stats.livesLost
+                : undefined;
+        const ended = typeof stats.ended === 'boolean' ? stats.ended : undefined;
+        const endedAt =
+            typeof stats.endedAt === 'string' && Number.isFinite(Date.parse(stats.endedAt))
+                ? stats.endedAt
+                : undefined;
+
+        if (livesLost === undefined && ended === undefined && endedAt === undefined) return;
+
+        // If a client reports the end without a timestamp, freeze the timer at
+        // the moment we hear about it rather than letting it keep running.
+        const endedFallback =
+            ended === true && endedAt === undefined ? new Date().toISOString() : null;
+
+        // Broadcasts carry game-wide stats so counters and the timer update
+        // without waiting for a refetch.
+        setGame((value) => {
+            if (value == null) return value;
+
+            const hasEnded = value.ended || ended === true;
+
+            return {
+                ...value,
+                // lives lost only grows within a game, so an out-of-order
+                // broadcast must not move the counter backwards.
+                livesLost: livesLost === undefined
+                    ? value.livesLost
+                    : Math.max(value.livesLost, livesLost),
+                ended: hasEnded,
+                endedAt: hasEnded
+                    ? value.endedAt ?? endedAt ?? endedFallback
+                    : value.endedAt,
+            };
+        });
     }, [commitBoard]);
 
     // One channel per logged-in user. Presence and broadcast make the board
@@ -218,12 +285,25 @@ export function GameProvider({ children }: { children: ReactNode }) {
             const next = applyMoves(boardRef.current, result.moves ?? []);
             commitBoard(next);
 
-            channelRef.current?.sendMoves(result.moves ?? []);
+            channelRef.current?.sendMoves(result.moves ?? [], {
+                gameId: current.game.id,
+                livesLost: result.livesLost,
+                ended: result.ended,
+                endedAt: result.endedAt,
+            });
+
             syncLives(result.lives ?? current.lives);
 
-            if (result.ended) {
-                setGame((value) => (value == null ? value : { ...value, ended: true }));
-            }
+            setGame((value) => value == null ? value : {
+                ...value,
+                livesLost: result.livesLost == null
+                    ? value.livesLost
+                    : Math.max(value.livesLost, result.livesLost),
+                ended: result.ended ?? value.ended,
+                endedAt: result.ended
+                    ? (result.endedAt ?? value.endedAt ?? new Date().toISOString())
+                    : value.endedAt,
+            });
         } catch (error) {
             console.error('Could not play turn', error);
             await syncBoard('replace').catch(console.error);
@@ -236,8 +316,19 @@ export function GameProvider({ children }: { children: ReactNode }) {
         const name = latest.current.username;
         if (name == null) return;
 
+        // Keep externally supplied values inside the shared bounds, so a new
+        // caller (or a future programmatic trigger) cannot create a puzzle the
+        // UI and the sizing code were not designed for.
+        const rows = Math.round(clamp(sizex, MIN_BOARD_SIZE, MAX_BOARD_SIZE));
+        const cols = Math.round(clamp(sizey, MIN_BOARD_SIZE, MAX_BOARD_SIZE));
+        const level = Math.round(clamp(difficulty, MIN_DIFFICULTY, MAX_DIFFICULTY));
+
         try {
-            const next = await resetGame(generateGame(sizex, sizey, difficulty / 10), name);
+            const next = await resetGame(
+                generateGame(rows, cols, normalizeDifficulty(level)),
+                name,
+                level
+            );
 
             setGame(next);
             commitBoard(getBlankGame(next.sizex, next.sizey, true) as (boolean | null)[][]);

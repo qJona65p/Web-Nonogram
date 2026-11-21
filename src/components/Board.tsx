@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import { useAuth } from "../ctx/userCtx";
 import { useGame } from "../ctx/gameCtx";
 import BoardCell from "./BoardCell";
@@ -23,28 +23,13 @@ export default function Board({ board, cell, hovered, onHover }: BoardProps) {
     const cols = sizey ?? 0;
     const disabled = lives <= 0 || (game?.ended ?? false);
 
-    // Hover only changes the overlays, so keep the 2,500 cells (50x50) stable.
-    const cells = useMemo(() => {
-        const result = [];
-
-        for (let fila = 0; fila < rows; fila++) {
-            for (let col = 0; col < cols; col++) {
-                result.push(
-                    <BoardCell
-                        key={`${fila}:${col}`}
-                        cell={cell}
-                        col={col}
-                        fila={fila}
-                        value={board[fila][col]}
-                        disabled={disabled}
-                        onPlay={playCell}
-                    />
-                );
-            }
-        }
-
-        return result;
-    }, [board, cell, disabled, playCell, rows, cols]);
+    // Hover only changes the overlays, so the rows can stay memoized while the
+    // pointer moves across the board. `applyMoves` keeps untouched rows
+    // referentially stable, so a single move only re-renders its own row.
+    const rowIndices = useMemo(
+        () => Array.from({ length: rows }, (_, index) => index),
+        [rows]
+    );
 
     if (sizex == null || sizey == null) return null;
 
@@ -84,7 +69,17 @@ export default function Board({ board, cell, hovered, onHover }: BoardProps) {
                     gridTemplateRows: `repeat(${sizex}, ${cell}px)`,
                 }}
             >
-                {cells}
+                {rowIndices.map((fila) => (
+                    <BoardRow
+                        key={fila}
+                        fila={fila}
+                        row={board[fila]}
+                        cols={cols}
+                        cell={cell}
+                        disabled={disabled}
+                        onPlay={playCell}
+                    />
+                ))}
             </div>
 
             {hovered && (
@@ -125,3 +120,35 @@ export default function Board({ board, cell, hovered, onHover }: BoardProps) {
         </div>
     );
 }
+
+interface BoardRowProps {
+    fila: number;
+    row: (boolean | null)[] | undefined;
+    cols: number;
+    cell: number;
+    disabled: boolean;
+    onPlay: (x: number, y: number, intent: boolean) => void;
+}
+
+/**
+ * One row of cells. Memoized so a move in another row leaves the DOM for this
+ * row untouched; at 100x100 that is the difference between 100 and 10,000
+ * cells being reconciled per click.
+ */
+const BoardRow = memo(function BoardRow({ fila, row, cols, cell, disabled, onPlay }: BoardRowProps) {
+    return (
+        <>
+            {Array.from({ length: cols }, (_, col) => (
+                <BoardCell
+                    key={col}
+                    cell={cell}
+                    col={col}
+                    fila={fila}
+                    value={row?.[col] ?? null}
+                    disabled={disabled}
+                    onPlay={onPlay}
+                />
+            ))}
+        </>
+    );
+});

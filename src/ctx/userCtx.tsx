@@ -4,8 +4,7 @@
 
 import { createContext, useCallback, useContext, useState, useEffect, type ReactNode } from 'react';
 import { getUserLives, submitUsername } from '../lib/supabase';
-
-export const MAX_LIVES = 5;
+import { MAX_LIVES } from '../lib/constants';
 
 interface UserCtxProps {
     username: string | null;

@@ -7,6 +7,22 @@ export interface Game {
 export interface StoredGame extends Game {
     id: number;
     ended: boolean;
+    /** ISO timestamp written by `reset_game`. */
+    startedAt: string;
+    /** ISO timestamp written by `end_game`, or null while in progress. */
+    endedAt: string | null;
+    /** Requested difficulty slider value. Labels are derived on the client. */
+    difficulty: number;
+    /** Lives lost by every player in this game, reset with the game. */
+    livesLost: number;
+}
+
+/** Live stats carried alongside a realtime `moves` broadcast. */
+export interface GameStats {
+    gameId?: number;
+    livesLost?: number;
+    ended?: boolean;
+    endedAt?: string | null;
 }
 
 export interface Cell {

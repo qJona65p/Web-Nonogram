@@ -1,4 +1,5 @@
-import { useAuth, MAX_LIVES } from "../ctx/userCtx";
+import { useAuth } from "../ctx/userCtx";
+import { MAX_LIVES } from "../lib/constants";
 
 export default function Status() {
     const { lives } = useAuth();
@@ -6,7 +7,9 @@ export default function Status() {
 
     return (
         <div
-            className={`flex items-center gap-0.5 ${lost ? "animate-[shake_0.4s_ease-in-out]" : ""}`}
+            className={`flex max-w-[9.5rem] flex-wrap items-center justify-center gap-0.5 ${
+                lost ? "animate-[shake_0.4s_ease-in-out]" : ""
+            }`}
             role="status"
             aria-label={lost ? "No lives left" : `${lives} of ${MAX_LIVES} lives remaining`}
         >

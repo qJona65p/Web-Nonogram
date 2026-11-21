@@ -1,6 +1,6 @@
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from './supabase';
-import type { ConnectionStatus, Move, OnlinePlayer } from './types';
+import type { ConnectionStatus, GameStats, Move, OnlinePlayer } from './types';
 import { colorFor } from './funcs';
 
 const CHANNEL_NAME = 'nonogram:global';
@@ -11,7 +11,7 @@ interface PresenceMeta {
 }
 
 export interface GameHandlers {
-    onMoves: (moves: Move[]) => void;
+    onMoves: (moves: Move[], stats?: GameStats) => void;
     onPresence: (players: OnlinePlayer[]) => void;
     onStatus: (status: ConnectionStatus) => void;
     onSubscribed: () => void;
@@ -19,7 +19,7 @@ export interface GameHandlers {
 }
 
 export interface GameChannel {
-    sendMoves: (moves: Move[]) => void;
+    sendMoves: (moves: Move[], stats?: GameStats) => void;
     announceReset: () => void;
     unsubscribe: () => void;
 }
@@ -34,7 +34,14 @@ export function subscribeToGame(username: string, handlers: GameHandlers): GameC
 
     channel
         .on('broadcast', { event: 'moves' }, ({ payload }) => {
-            handlers.onMoves((payload as { moves?: Move[] }).moves ?? []);
+            const data = payload as { moves?: Move[] } & GameStats;
+
+            handlers.onMoves(data.moves ?? [], {
+                gameId: data.gameId,
+                livesLost: data.livesLost,
+                ended: data.ended,
+                endedAt: data.endedAt,
+            });
         })
         .on('broadcast', { event: 'reset' }, () => {
             handlers.onReset();
@@ -81,8 +88,12 @@ export function subscribeToGame(username: string, handlers: GameHandlers): GameC
         });
 
     return {
-        sendMoves: (moves) => {
-            void channel.send({ type: 'broadcast', event: 'moves', payload: { moves } });
+        sendMoves: (moves, stats) => {
+            void channel.send({
+                type: 'broadcast',
+                event: 'moves',
+                payload: { moves, ...stats },
+            });
         },
         announceReset: () => {
             void channel.send({ type: 'broadcast', event: 'reset', payload: {} });
